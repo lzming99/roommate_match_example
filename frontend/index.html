@@ -1,4 +1,29 @@
 <!DOCTYPE html>
 <html>
-    
+    <head>
+        <title>HW 6/20</title>
+    </head>
+    <body>
+        <script>
+            let arr = [];
+            while(true){
+                let input = prompt("enter a number");
+                if(isNaN(input)){
+                    break;
+                };
+                let num = Number(input);
+                arr.push(num);
+            }
+            if(arr.length === 0){
+                console.log("no input!");
+            }
+            else{
+                let sum = 0;
+                for(n of arr){
+                    sum += n
+                }
+                console.log(sum)
+            }
+        </script>
+    </body>
 </html>
