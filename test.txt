@@ -1,0 +1,5 @@
+user1,user1@example.com,Password1!
+user2,user2@example.com,Password2@
+user3,user3@example.com,Password3#
+user4,user4@example.com,Password4$
+user5,user5@example.com,Password5%

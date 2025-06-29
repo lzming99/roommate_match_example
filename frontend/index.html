@@ -1,29 +1,43 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>HW 6/20</title>
-    </head>
-    <body>
-        <script>
-            let arr = [];
-            while(true){
-                let input = prompt("enter a number");
-                if(isNaN(input)){
-                    break;
-                };
-                let num = Number(input);
-                arr.push(num);
-            }
-            if(arr.length === 0){
-                console.log("no input!");
-            }
-            else{
-                let sum = 0;
-                for(n of arr){
-                    sum += n
-                }
-                console.log(sum)
-            }
-        </script>
-    </body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Roommate Match</title>
+    <link href="styles.css" rel="stylesheet" />
+</head>
+<body>
+    <main>
+        <section id="auth-section">
+            <form id="register-form" class="space-y-4 mt-4" style="display:none;">
+                <!-- Registration form fields -->
+                <input type="text" name="username" placeholder="Username" required />
+                <input type="email" name="email" placeholder="Email" required />
+                <input type="password" name="password" placeholder="Password" required />
+                <button type="submit">Register</button>
+                <p>Already have an account? <a href="#" id="show-login">Login here</a></p>
+            </form>
+            <form id="login-form" class="space-y-4" style="display:block;">
+                <!-- Login form fields -->
+                <input type="email" name="email" placeholder="Email" required />
+                <input type="password" name="password" placeholder="Password" required />
+                <button type="submit">Login</button>
+                <p>Don't have an account? <a href="#" id="show-register">Register here</a></p>
+            </form>
+        </section>
+    </main>
+    <script src="js/api.js"></script>
+    <script>
+        // Toggle to registration form
+        document.getElementById('show-register').addEventListener('click', function() {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'block';
+        });
+        // Toggle back to login form
+        document.getElementById('show-login').addEventListener('click', function() {
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+        });
+    </script>
+</body>
 </html>
