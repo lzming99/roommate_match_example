@@ -4,40 +4,296 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Roommate Match</title>
-    <link href="styles.css" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Hidden class */
+        .hidden {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
-    <main>
-        <section id="auth-section">
-            <form id="register-form" class="space-y-4 mt-4" style="display:none;">
-                <!-- Registration form fields -->
-                <input type="text" name="username" placeholder="Username" required />
-                <input type="email" name="email" placeholder="Email" required />
-                <input type="password" name="password" placeholder="Password" required />
-                <button type="submit">Register</button>
-                <p>Already have an account? <a href="#" id="show-login">Login here</a></p>
-            </form>
-            <form id="login-form" class="space-y-4" style="display:block;">
-                <!-- Login form fields -->
-                <input type="email" name="email" placeholder="Email" required />
-                <input type="password" name="password" placeholder="Password" required />
-                <button type="submit">Login</button>
-                <p>Don't have an account? <a href="#" id="show-register">Register here</a></p>
-            </form>
-        </section>
-    </main>
-    <script src="js/api.js"></script>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <h1>Roommate Match NYC</h1>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div id="user-menu"></div>
+                        <button id="logout-btn" class="btn-danger" onclick="logout()" style="display:none;">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Auth View -->
+                <div id="auth-view" class="">
+                    <div class="card">
+                        <h2 id="auth-title">Sign In</h2>
+                        <div id="auth-error" class="alert alert-error hidden"></div>
+                        
+                        <!-- Login Form -->
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" name="email" required>
+                                <span class="error-message" id="login-email-error"></span>
+                            </div>
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" name="password" required>
+                                <span class="error-message" id="login-password-error"></span>
+                            </div>
+                            <button type="submit" id="login-btn">Sign In</button>
+                            <p style="margin-top: 15px;">
+                                <a href="#" onclick="showRegisterForm(); return false;">Don't have an account? Sign up</a>
+                            </p>
+                        </form>
+                        
+                        <!-- Register Form -->
+                        <form id="register-form" class="hidden">
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input type="text" name="name" required>
+                                <span class="error-message" id="register-name-error"></span>
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" name="email" required>
+                                <span class="error-message" id="register-email-error"></span>
+                            </div>
+                            <div class="form-group">
+                                <label>Password (min 8 characters)</label>
+                                <input type="password" name="password" required minlength="8">
+                                <span class="error-message" id="register-password-error"></span>
+                            </div>
+                            <button type="submit" id="register-btn">Create Account</button>
+                            <p style="margin-top: 15px;">
+                                <a href="#" onclick="showLoginForm(); return false;">Already have an account? Sign in</a>
+                            </p>
+                        </form>
+                    </div>
+                </div>
+        </main>
+    </div>
+    
+    <!-- JavaScript -->
     <script>
-        // Toggle to registration form
-        document.getElementById('show-register').addEventListener('click', function() {
-            document.getElementById('login-form').style.display = 'none';
-            document.getElementById('register-form').style.display = 'block';
-        });
-        // Toggle back to login form
-        document.getElementById('show-login').addEventListener('click', function() {
-            document.getElementById('register-form').style.display = 'none';
-            document.getElementById('login-form').style.display = 'block';
-        });
+        // API configuration
+        const API_BASE = 'http://localhost:5100';
+        let authToken = null;
+        let currentUser = null;
+        
+        // API wrapper
+        const api = {
+            async request(endpoint, options = {}) {
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                };
+                
+                if (authToken) {
+                    headers['Authorization'] = `Bearer ${authToken}`;
+                }
+                
+                try {
+                    const response = await fetch(`${API_BASE}${endpoint}`, {
+                        ...options,
+                        headers
+                    });
+                    
+                    let data;
+                    const contentType = response.headers.get('content-type');
+                    
+                    if (contentType && contentType.includes('application/json')) {
+                        data = await response.json();
+                    } else {
+                        // If not JSON, try to read as text
+                        const text = await response.text();
+                        data = { message: text || 'Unknown error' };
+                    }
+                    
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            // Token expired or invalid
+                            logout();
+                            throw new Error('Session expired. Please login again.');
+                        }
+                        throw new Error(data.error || data.message || 'Request failed');
+                    }
+                    
+                    return data;
+                } catch (error) {
+                    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                        throw new Error('Cannot connect to server. Please check your connection.');
+                    }
+                    throw error;
+                }
+            }
+        };
+        
+        // Utility functions
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.classList.remove('hidden');
+                setTimeout(() => {
+                    errorElement.classList.add('hidden');
+                }, 5000);
+            }
+        }
+        
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.textContent = '';
+            });
+            document.querySelectorAll('.alert-error').forEach(el => {
+                el.classList.add('hidden');
+            });
+        }
+        
+        function setLoading(buttonId, loading) {
+            const button = document.getElementById(buttonId);
+            if (button) {
+                button.disabled = loading;
+                if (loading) {
+                    button.setAttribute('data-original-text', button.textContent);
+                    button.textContent = 'Loading...';
+                } else {
+                    button.textContent = button.getAttribute('data-original-text') || button.textContent;
+                }
+            }
+        }
+          
+        // Auth functions
+        function showLoginForm() {
+            clearErrors();
+            document.getElementById('login-form').classList.remove('hidden');
+            document.getElementById('register-form').classList.add('hidden');
+            document.getElementById('auth-title').textContent = 'Sign In';
+        }
+        
+        function showRegisterForm() {
+            clearErrors();
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+            document.getElementById('auth-title').textContent = 'Create Account';
+        }
+        
+        async function handleLogin(e) {
+            e.preventDefault();
+            clearErrors();
+            const formData = new FormData(e.target);
+            
+            setLoading('login-btn', true);
+            
+            try {
+                const data = await api.request('/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        email: formData.get('email'),
+                        password: formData.get('password')
+                    })
+                });
+                
+                authToken = data.access_token;
+                currentUser = data.user;
+                localStorage.setItem('authToken', authToken);
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                updateUserMenu();
+                checkUserStatus();
+            } catch (error) {
+                showError('auth-error', error.message);
+            } finally {
+                setLoading('login-btn', false);
+            }
+        }
+        
+        async function handleRegister(e) {
+            e.preventDefault();
+            clearErrors();
+            const formData = new FormData(e.target);
+            
+            const password = formData.get('password');
+            if (password.length < 8) {
+                showError('register-password-error', 'Password must be at least 8 characters');
+                return;
+            }
+            
+            setLoading('register-btn', true);
+            
+            try {
+                const data = await api.request('/auth/register', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name: formData.get('name'),
+                        email: formData.get('email'),
+                        password: formData.get('password')
+                    })
+                });
+                
+                authToken = data.access_token;
+                currentUser = data.user;
+                localStorage.setItem('authToken', authToken);
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                updateUserMenu();
+                checkUserStatus();
+            } catch (error) {
+                showError('auth-error', error.message);
+            } finally {
+                setLoading('register-btn', false);
+            }
+        }
+        
+        // Logout
+        function logout() {
+            authToken = null;
+            currentUser = null;
+            
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            
+            updateUserMenu();
+            checkUserStatus();
+        }
+        
+        function updateUserMenu() {
+            const userMenu = document.getElementById('user-menu');
+            const logoutBtn = document.getElementById('logout-btn');
+            if (currentUser) {
+                userMenu.textContent = 'login success';
+                if (logoutBtn) logoutBtn.style.display = 'inline-block';
+            } else {
+                userMenu.innerHTML = '';
+                if (logoutBtn) logoutBtn.style.display = 'none';
+            }
+        }
+        
+        function checkUserStatus() {
+            const authView = document.getElementById('auth-view');
+            if (currentUser) {
+                authView.classList.add('hidden');
+            } else {
+                authView.classList.remove('hidden');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
+        document.getElementById('register-form').addEventListener('submit', handleRegister);
+        
     </script>
 </body>
 </html>
