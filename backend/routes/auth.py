@@ -13,9 +13,10 @@ def register():
         # Validate required fields
         required = ['email', 'password', 'name']
         for field in required:
-            if field not in data:
-                return jsonify({'error': f'{field} is required'}), 400
-        
+            value = data.get(field)
+            if not value or (isinstance(value, str) and not value.strip()):  # 检查值是否为空或仅为空白字符
+                return jsonify({'error': f'{field} is required and cannot be empty'}), 400
+            
         # Password strength check
         if len(data['password']) < 8:
             return jsonify({'error': 'Password must be at least 8 characters'}), 400

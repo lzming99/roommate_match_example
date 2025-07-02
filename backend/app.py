@@ -62,6 +62,13 @@ def create_app(): # 创建Flask
     except Exception as e:
         print(f"===== MongoDB ping failed ===== \n {e}")
 
+    # DB manipulate test
+    # db = app.db.test # access DB database and collection, app=flask obj, test=collection name(table in sql or excel).
+    # db.drop() # db.drop() to remove 'test' collection and all documents under 'test'. 
+    # _id = db.insert_one({'test1': 'test2'}).inserted_id # then use insert_one to  insert a document to the database with JSON format, we ask result of our insert to contain _id, which is MongoDB's unique identifier for each document, 
+    # print(f"+++ Created: {_id}, Found: {bool(db.find_one({'_id': _id}))}") # we test our insert in last step, print id, and test it is there or not
+    # print(f"+++ Deleted: {db.delete_one({'_id': _id}).deleted_count}, Gone: {db.find_one({'_id': _id}) is None}") # we remove our test document, and find it again to make sure that it is gone. 
+
     # -- Register Blueprints -- Each blueprint defines its own routes under the given URL prefix
     app.register_blueprint(auth_bp, url_prefix='/auth')
     # app.register_blueprint(profiles_bp, url_prefix='/profiles')
