@@ -1,8 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app # 导入Flask 
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from bson import ObjectId
 from models.user import User
-from datetime import datetime
 
 profiles_bp = Blueprint('profiles', __name__) # 创建 blueprint 
 
