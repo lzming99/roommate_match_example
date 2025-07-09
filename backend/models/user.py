@@ -21,8 +21,8 @@ class User:
             'email': email.lower(),
             'password_hash': generate_password_hash(password),
             'name': name,
-            'created_at': now_utc,
-            'updated_at': now_utc,
+            'created_at': now_utc(),
+            'updated_at': now_utc(),
             'profile_complete': False,
             'active': True
         }

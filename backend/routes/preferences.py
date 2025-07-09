@@ -67,8 +67,10 @@ def save_preferences():
         'roommate_preferences': {
             'age_range': {
                 'min': data.get('pref_age_min'),
-                'max': data.get('pref_age_max')
+                'max': data.get('pref_age_max'),
+                'is_flexible': data.get('is_flexible_age_range', False)
             },
+            
             'gender': data.get('pref_gender'),
             'lifestyle': {
                 'pets_ok': data.get('pets_ok'),
@@ -77,15 +79,17 @@ def save_preferences():
                 'partying_ok': data.get('pref_partying_ok'),
                 'noise_level': data.get('pref_noise_level'),
                 'quiet_hours': data.get('pref_quiet_hours'),
+                'is_flexible_quiet_hours': data.get('is_flexible_quiet_hours', False),
             }
         }
     }
 
     clean_doc = _clean_dict(preferences_doc) # 去除 None，避免覆盖已有值
+    set_doc = {k: v for k, v in clean_doc.items() if k != 'user_id'} # Remove user_id from $set，prevent conflict with $setOnInsert
 
     current_app.db.preferences.update_one( # Upsert
         {'user_id': user_id},
-        {'$set': clean_doc, '$setOnInsert': {'user_id': user_id}},
+        {'$set': set_doc, '$setOnInsert': {'user_id': user_id}},
         upsert=True
     )
 
